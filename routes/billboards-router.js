@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.post("/create-campaign/atlantis", async (req, res) => { 
     res.type('application/json');
-    if(!verifyBodyAtlantisData(req.body)) return res.status(500).send('Missing Data')
+    if(verifyBodyAtlantisData(req.body)) return res.status(500).send('Missing Data')
     let newCampaign = await billboards.add(req.body)
     let slackBlockKit = {
         "attachments": [
@@ -108,7 +108,7 @@ router.post("/create-campaign/atlantis", async (req, res) => {
     }
     axios.post(config.SLACK_DATA.WEBHOOK_ATLANTIS_URL, slackBlockKit)
     .then(() => {
-        res.status(200).send('Campaign Created')
+        res.status(200).send('Success')
     }).catch(() => {
         res.status(500).send('Error')
     })
@@ -116,7 +116,7 @@ router.post("/create-campaign/atlantis", async (req, res) => {
 
 router.post("/create-campaign/auchan", async (req, res) => {
     res.type('application/json')
-    if(!verifyBodyAuchanData(req.body)) return res.status(500).send('Missing data')
+    if(verifyBodyAuchanData(req.body)) return res.status(500).send('Missing data')
     let newCampaign = await billboards.add(req.body)
     let blockKit = {
         "attachments": [
@@ -213,7 +213,7 @@ router.post("/create-campaign/auchan", async (req, res) => {
     }
     axios.post(config.SLACK_DATA.WEBHOOK_AUCHAN_URL, blockKit)
     .then(() => {
-        res.status(200).send('Campaign Created')
+        res.status(200).send('Success')
     }).catch(() => {
         res.status(500).send('Error')
     })

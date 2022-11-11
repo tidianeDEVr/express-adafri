@@ -36,26 +36,6 @@ module.exports = {
             .end({ pretty: true});
         }
         return xml;
-    },
-    sendSmsCampaign: function sendSmsCampaign(sendto, content, sender){
-        var hash = crypto.HmacSHA256(content, config.LAFRICA_DATA.login);
-        var base64 = hash.toString(crypto.enc.Base64);
-        var hmac = base64
-
-        var root = builder.create('push', { encoding: "iso-8859-1" })
-        .att('accountid',  config.LAFRICA_DATA.login)
-        .att('password', config.LAFRICA_DATA.password)
-        .att('ret_id', "Push 1")
-        .att('hmac',  hmac)
-        .att('name', "name")
-        .att('userdata', "User Data Multiple Sent")
-        .att('sender', sender)
-        .ele('message')
-            .ele('text', {}, content).up()
-            .ele('to', {}, sendto).up()
-        .up()
-        var xml = root.end({ pretty: true });
-        return xml;
     }
 }
 
