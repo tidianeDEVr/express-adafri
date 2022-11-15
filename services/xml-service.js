@@ -24,21 +24,20 @@ module.exports = {
         .ele('p',{}, activeCampaign.questions[step].libelle).up()
         .ele('p',{}, 'Faites votre choix : ').up();
         activeCampaign.questions[step].choices.forEach((value, index) => {
-            root.ele('a', {'href': `${config.ADAFRI_ENDPOINTS.SMS}/respond-survey?msisdn=${msisdn}&step=${step}&choice=${index}`}, `${index+1}. ${value}`).up();
+            root.ele('a', {'href': `${config.ADAFRI_ENDPOINTS.USSD}/respond-survey?msisdn=${msisdn}&step=${step}&choice=${index}`}, `${index+1}. ${value}`).up();
         });
         var xml = root.end({ pretty: true});
-
         return xml;
     },
     buildErrorXML: function buildErrorXML(){
         var xml = builder.create('page')
-        .ele('p',{}, 'Une erreur s\'est produite. Veuillez reessayer ulterieurement.').up()
+        .ele('p',{}, 'Une erreur s\'est produite. Veuillez réessayer ultérieurement.').up()
         .end({ pretty: true});
         return xml;
     },
     buildGreatingXML: function buildGreatingXML(){
         var xml = builder.create('page')
-        .ele('p',{}, 'Vous avez deja repondu a ce sondage. Merci et a bientot').up()
+        .ele('p',{}, 'Vous avez déjà répondu a ce sondage. Merci et à bientôt').up()
         .end({ pretty: true});
         return xml;
     }
