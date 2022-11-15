@@ -3,14 +3,13 @@ const config = require('../config')
 const router = express.Router()
 const billboards = config.db.collection('billboards-campaigns')
 
-router.get("/campaign/:id", async (req, res) => {
-    let id =  req.params.id
+router.get("/campaign/:name", async (req, res) => {
+    let name =  req.params.name
     let campaign = undefined;
     const snapshot = await billboards.get()
-    snapshot.docs.map((doc) => { if(id === doc.id) campaign = doc.data() })
-    if(id === undefined || campaign === undefined) return res.status(404).render('not-found')
-    res.render('files', { campaign: campaign})
-    
+    snapshot.docs.map((doc) => { if(name === doc.data().name) campaign = doc.data() })
+    if(name === undefined || campaign === undefined) return res.status(404).render('not-found')
+    res.render('files', { campaign: campaign}) 
 }) 
 
 module.exports = router

@@ -1,14 +1,42 @@
 const express = require('express')
 const config = require('../config')
-const { verifyBodyAtlantisData, verifyBodyAuchanData } = require('../services/billboards-service')
+const { verifyCampaignData } = require('../services/billboards-service')
 const axios = require('axios')
 const billboards = config.db.collection('billboards-campaigns')
 const router = express.Router()
+const moment = require('moment')
 
-router.post("/create-campaign/atlantis", async (req, res) => { 
+// Get Campagn By Owner
+router.get("/get", async(req, res) => {
+    res.send('BY OWNER')
+})
+
+// Get All Campagn By Owner
+router.get("/get/:owner", async(req, res) => {
+    let owner =  req.params.owner
+    let campaigns = []
+    const snapshot = await billboards.get()
+    // Get Owner's Campaigns
+    snapshot.docs.map((doc) => { if(owner === doc.data().owner) campaigns.push(doc.data()) })
+    res.send(campaigns)
+})
+
+router.post("/create/atlantis", async (req, res) => { 
     res.type('application/json');
-    if(verifyBodyAtlantisData(req.body)) return res.status(500).send('Missing Data')
-    let newCampaign = await billboards.add(req.body)
+    let campaign = req.body.campaign;
+    if(verifyCampaignData(campaign)) return res.status(500).send('Missing Data')
+    let countries = '';
+    let locations = '';
+    for (let location of campaign.broadcastLocations){
+        locations += ` * ${location.name}\n`
+    }
+    for (let country of campaign.countries){
+        countries += ` * ${country.name} `
+    }
+    let newCampaign = await billboards.add(campaign)
+    let startAt = moment(campaign.startAt).utc().format('MM/DD/YYYY')
+    let finishAt = moment(campaign.finishAt).utc().format('MM/DD/YYYY')
+    if(!newCampaign) return res.status(500).send('Erreur lors de l\'insertion')
     let slackBlockKit = {
         "attachments": [
             {
@@ -30,31 +58,27 @@ router.post("/create-campaign/atlantis", async (req, res) => {
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Annonceur:*\n${req.body.owner}`
+                                "text": `*Annonceur:*\n${campaign.owner}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Nombre Jours:*\n${req.body.numberOfDays}`
+                                "text": `*Nombre Jours:*\n${campaign.numberOfDays}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Date Debut:*\n${req.body.startAt}`
+                                "text": `*Date Debut:*\n${startAt}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Date Fin:*\n${req.body.finishAt}`
+                                "text": `*Date Fin:*\n${finishAt}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Heures Diffusion:*\n${req.body.broadcastHours}`
+                                "text": `*Pays:*\n${countries}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Pays:*\n${req.body.countries}`
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": `*Ecrans Sélectionnés:*\n${req.body.broadcastLocations}`
+                                "text": `*Ecrans Sélectionnés:*\n${locations}`
                             }
                         ]
                     },
@@ -66,11 +90,11 @@ router.post("/create-campaign/atlantis", async (req, res) => {
                                 "text": {
                                     "type": "plain_text",
                                     "emoji": true,
-                                    "text": "APPROUVER"
+                                    "text": "APPROUVER",
                                 },
                                 "style": "primary",
                                 "value": "click_me_123",
-                                "url": `${config.ADAFRI_ENDPOINTS.BILLBOARDS}`
+                                "url": `${config.ADAFRI_ENDPOINTS.BILLBOARDS}/validate/${newCampaign.id}`
                             },
                             {
                                 "type": "button",
@@ -80,7 +104,8 @@ router.post("/create-campaign/atlantis", async (req, res) => {
                                     "text": "ANNULER"
                                 },
                                 "style": "danger",
-                                "value": "click_me_123"
+                                "value": "click_me_123",
+                                "url": `${config.ADAFRI_ENDPOINTS.BILLBOARDS}/cancel/${newCampaign.id}`
                             }
                         ]
                     },
@@ -98,7 +123,7 @@ router.post("/create-campaign/atlantis", async (req, res) => {
                                 "emoji": true
                             },
                             "value": "click_me_123",
-                            "url": `${config.ADAFRI_ENDPOINTS.RENDER}/campaign/${newCampaign.id}`,
+                            "url": `${config.ADAFRI_ENDPOINTS.RENDER}/campaign/${campaign.name}`,
                             "action_id": "button-action"
                         }
                     }
@@ -114,10 +139,17 @@ router.post("/create-campaign/atlantis", async (req, res) => {
     })
 })
 
-router.post("/create-campaign/auchan", async (req, res) => {
+router.post("/create/auchan", async (req, res) => {
     res.type('application/json')
-    if(verifyBodyAuchanData(req.body)) return res.status(500).send('Missing data')
-    let newCampaign = await billboards.add(req.body)
+    let campaign = req.body.campaign
+    if(verifyCampaignData(campaign)) return res.status(500).send('Missing data')
+    let newCampaign = await billboards.add(campaign)
+    let startAt = moment(campaign.startAt).utc().format('MM/DD/YYYY')
+    let finishAt = moment(campaign.finishAt).utc().format('MM/DD/YYYY')
+    let locations = ''
+    for (location of campaign.broadcastLocations){
+        locations += ` * ${location.name} \n`
+    }
     let blockKit = {
         "attachments": [
             {
@@ -139,27 +171,23 @@ router.post("/create-campaign/auchan", async (req, res) => {
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Annonceur:*\n${req.body.owner}`
+                                "text": `*Annonceur:*\n${campaign.owner}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Nombre Jours:*\n${req.body.numberOfDays}`
+                                "text": `*Nombre Jours:*\n${campaign.numberOfDays}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Date Debut:*\n${req.body.startAt}`
+                                "text": `*Date Debut:*\n${startAt}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Date Fin:*\n${req.body.finishAt}`
+                                "text": `*Date Fin:*\n${finishAt}`
                             },
                             {
                                 "type": "mrkdwn",
-                                "text": `*Heures Diffusion:*\n${req.body.broadcastHours}`
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": `*Ecrans Sélectionnés:*\n${req.body.broadcastLocations}`
+                                "text": `*Ecrans Sélectionnés:*\n${locations}`
                             }
                         ]
                     },
@@ -175,7 +203,7 @@ router.post("/create-campaign/auchan", async (req, res) => {
                                 },
                                 "style": "primary",
                                 "value": "click_me_123",
-                                "url": `${config.ADAFRI_ENDPOINTS.BILLBOARDS}`
+                                "url": `${config.ADAFRI_ENDPOINTS.BILLBOARDS}/validate/${newCampaign.id}`
                             },
                             {
                                 "type": "button",
@@ -185,7 +213,8 @@ router.post("/create-campaign/auchan", async (req, res) => {
                                     "text": "ANNULER"
                                 },
                                 "style": "danger",
-                                "value": "click_me_123"
+                                "value": "click_me_123",
+                                "url": `${config.ADAFRI_ENDPOINTS.BILLBOARDS}/cancel/${newCampaign.id}`
                             }
                         ]
                     },
@@ -217,6 +246,40 @@ router.post("/create-campaign/auchan", async (req, res) => {
     }).catch(() => {
         res.status(500).send('Error')
     })
+})
+
+// UPDATE CAMPAIGN 
+router.get("/:action/:id", async (req, res) => {
+    // Params
+    let action =  req.params.action
+    let id =  req.params.id
+    let campaign = undefined;
+    const snapshot = await billboards.get()
+    // Get Actual Campaign
+    snapshot.docs.map((doc) => { if(id === doc.id) campaign = doc.data() })
+    // Check If Campaign Exist
+    if(id === undefined || campaign === undefined || campaign.status != 'waiting_for_validation') return res.status(404).render('not-found')
+    // Check Actions
+    if(action == 'validate') { 
+        campaign.status = 'validated'
+        campaign.startAt = new Date()
+        campaign.finishAt = moment(new Date(), "DD-MM-YYYY").add(campaign.numberOfDays, 'days').toDate();
+        // Notifications
+        if(campaign.broadcastType == 'auchan') axios.post(config.SLACK_DATA.WEBHOOK_AUCHAN_URL, { text: `L'annonce *${campaign.name}* a ete approuver ! Merci` })
+        if(campaign.broadcastType == 'atlantis') axios.post(config.SLACK_DATA.WEBHOOK_ATLANTIS_URL, { text: `L'annonce *${campaign.name}* a ete approuver ! Merci` })
+    }
+    if(action == 'cancel') {
+        campaign.status = 'canceled'
+        // Notifications
+        if(campaign.broadcastType == 'auchan') axios.post(config.SLACK_DATA.WEBHOOK_AUCHAN_URL, { text: `L'annonce *${campaign.name}* a ete supprimer ! Merci` })
+        if(campaign.broadcastType == 'atlantis') axios.post(config.SLACK_DATA.WEBHOOK_ATLANTIS_URL, { text: `L'annonce *${campaign.name}* a ete supprimer ! Merci` })
+    }
+    if(action == 'delete') campaign.status = 'deleted'
+
+    // Update Campaign
+    billboards.doc(id).update(campaign)
+    // Close Tab
+    res.send("<script>window.close();</script > ")
 })
 
 module.exports = router

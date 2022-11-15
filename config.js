@@ -20,7 +20,9 @@ const LAFRICA_DATA = {
 }
 const SLACK_DATA = {
     "WEBHOOK_ATLANTIS_URL": "https://hooks.slack.com/services/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",
+    "ATLANTIS_CHANNEL": "C0496JQT090",
     "WEBHOOK_AUCHAN_URL": "https://hooks.slack.com/services/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",
+    "AUCHAN_CHANNEL": "C049YSQBPMZ"
 }
 const ADAFRI_ENDPOINT = "http://localhost:3000"
 const ADAFRI_ENDPOINTS = {

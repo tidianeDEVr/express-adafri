@@ -5,6 +5,21 @@ const sms_campaigns = config.db.collection('sms-campaigns')
 const { verifyBodySmsCampaign, buildBodySmsCampaign } = require("../services/sms-service") 
 const axios = require('axios')
 
+// Get Campagn By Owner
+router.get("/get", async(req, res) => {
+  res.send('BY OWNER')
+})
+
+// Get All Campagn By Owner
+router.get("/get/:owner", async(req, res) => {
+  res.send('ALL')
+})
+
+// Get CampaIgn By ID
+router.get("/get/:id", async(req, res) => {
+  res.send('BY ID')
+})
+
 
 // Send SMS Campaigns
 router.post("/make-campaign", async(req, res) => {
